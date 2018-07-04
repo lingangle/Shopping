@@ -1,0 +1,72 @@
+<style lang="less">
+@import './style/iconfont.wxss';
+</style>
+
+<script>
+import wepy from 'wepy'
+
+export default class extends wepy.app {
+  config = {
+    pages: [
+      'pages/index',
+      'pages/category',
+      'pages/shoppingCar',
+      'pages/mine',
+      'pages/search',
+      'pages/category1',
+      'pages/goods_detail',
+      'pages/login',
+      'pages/order',
+      'pages/addressManage',
+      'pages/test'
+    ],
+    window: {
+      backgroundTextStyle: 'light',
+      navigationBarBackgroundColor: '#ff2d4a',
+      navigationBarTitleText: 'WeChat',
+      navigationBarTextStyle: 'white'
+    },
+    tabBar: {
+        color: "#626567",
+        selectedColor: "#ff2d4a",
+        backgroundColor: "#FBFBFB",
+        borderStyle: "lightpink",
+        list: [
+          {
+            pagePath: "pages/index",
+            text: "首页",
+            iconPath: "/icon/icon_home@3x.png",
+            selectedIconPath: "/icon/icon_home_active@3x.png"
+          },
+          {
+            pagePath: "pages/category",
+            text: "分类",
+            iconPath: "/icon/icon_category@3x.png",
+            selectedIconPath: "/icon/icon_category_active@3x.png"
+          },
+          {
+            pagePath: "pages/shoppingCar",
+            text: "购物车",
+            iconPath: "/icon/icon_cart@3x.png",
+            selectedIconPath: "/icon/icon_cart_active@3x.png"
+          },
+           {
+            pagePath: "pages/mine",
+            text: "我的",
+            iconPath: "/icon/icon_me@3x.png",
+            selectedIconPath: "/icon/icon_me_active@3x.png"
+          }
+      ] 
+  }
+  }
+
+  onLaunch() {
+    console.log('on launch')
+  }
+
+  globalData = {
+    baseURL:"https://www.zhengzhicheng.cn/",
+    username:''
+  }
+}
+</script>

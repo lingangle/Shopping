@@ -1,0 +1,147 @@
+<template>
+    <searchbar></searchbar>
+    <view class="scroll-box">
+        <scroll-view class="scrollL" scroll-y scroll-with-animation @scroll="">
+           <block wx:for="{{fenleiArr}}">               
+               <view @tap="selectItem({{index}})" class="item {{index == selectIndex? 'active':''}}" data-id="{{item.cat_id}}">{{item.cat_name}}</view>
+            </block>
+        </scroll-view>
+        <scroll-view class="scrollR" scroll-y scroll-with-animation @scroll="">
+            <block wx:for="{{fenleiArr[selectIndex].children}}">               
+               <view class="title">{{item.cat_name}}</view>
+               <view class="children-box">
+                    <block wx:for="{{item.children}}" wx:for-item="itemson" >               
+                        <navigator url="" open-type="navigate" hover-class="none">
+                            <image src="https://www.zhengzhicheng.cn/{{itemson.cat_icon}}" lazy-load="true"></image>
+                            <text>{{itemson.cat_name}}</text>
+                        </navigator>
+                        
+                    </block>
+                </view>
+            </block>
+        </scroll-view>
+    </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import api from '../../src/api/api.js'
+import searchbar from '../components/searchbar'
+
+export default class Example extends wepy.page {
+  config = {
+    navigationBarTitleText: '分类'
+  }
+
+  data = {
+    fenleiArr: [],
+    selectIndex: 0
+  }
+
+  //声明页面中将要使用到的组件
+  components = {
+    searchbar: searchbar
+  }
+
+  methods = {
+    selectItem(index) {
+      // console.log(index);
+      // 修改选中的索引即可
+      this.selectIndex = index
+    }
+  }
+
+  events = {}
+
+  watch = {}
+
+  computed = {}
+
+  onLoad() {
+    this.getFenleisInfo()
+  }
+  onShow() {}
+  getFenleisInfo() {
+    api.getFenleiS({
+      success: resp => {
+        console.log(resp.data)
+        this.fenleiArr = resp.data.message
+        this.$apply()
+      }
+    })
+  }
+}
+</script>
+
+<style lang='less'>
+page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.scroll-box {
+  flex: 1;
+  display: flex;
+  scroll-view {
+    height: 100%;
+    &.scrollL {
+      width: 200rpx;
+      .item {
+        box-sizing: border-box;
+        font-size: 24rpx;
+        color: #888;
+        height: 100rpx;
+        text-align: center;
+        background-color: #f4f4f4;
+        line-height: 100rpx;
+        &.active {
+          color: #eb4450;
+          background-color: #fff;
+          font-weight: 700;
+          position: relative;
+          &::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 20rpx;
+            height: 60rpx;
+            width: 10rpx;
+            background-color: #eb4450;
+          }
+        }
+      }
+    }
+    &.scrollR {
+      flex: 1;
+      .title {
+        text-align: center;
+        font-size: 24rpx;
+        padding: 15rpx 0;
+      }
+      .title-image {
+        width: 520rpx;
+        height: 178rpx;
+      }
+      .children-box {
+        display: flex;
+        flex-wrap: wrap;
+        navigator {
+          width: 33.3333%;
+          padding: 20rpx 0;
+          image {
+            width: 90rpx;
+            height: 60rpx;
+            margin: 0 auto;
+            display: block;
+          }
+          text {
+            display: block;
+            text-align: center;
+            font-size: 22rpx;
+          }
+        }
+      }
+    }
+  }
+}
+</style>

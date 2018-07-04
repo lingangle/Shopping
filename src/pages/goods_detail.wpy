@@ -1,0 +1,392 @@
+<template>
+    <view class="top">
+        <view class="luobo">
+            <swiper class="activity"  indicator-dots="{{indicatorDots}}"
+                        autoplay="{{autoplay}}" interval="{{interval}}" duration="{{duration}}" circular="{{circular}}">
+                <block wx:for="{{goodsArr.pics}}" >
+                <swiper-item @tap="previewImage">
+                    <image src="{{item.pics_big}}"  class="slide-image" />
+                </swiper-item>
+                </block>
+            </swiper>
+        </view>
+        
+       
+        <view class="content">
+            <text class="price">￥{{goodsArr.goods_price}}</text>
+            <view>
+                <text class="title">{{goodsArr.goods_name}}</text>
+                <view @tap="shoucang" class="{{isshou == 1 ? 'shou' :'' }}">
+                    <text class="iconfont icon-shoucang"></text>
+                    <text>收藏</text>
+                </view>
+            </view>
+            <text class="kuaidi" decode>快递： 免运费</text>
+        </view>
+    </view>
+    <view class="tab-box">
+            <!-- 顶部区域 -->
+            <view class="tab-bar">
+                <view @tap="selectItem(0)" class="item {{selectIndex==0?'active':''}}">图文介绍</view>
+                <view @tap="selectItem(1)" class="item {{selectIndex==1?'active':''}}">规则参数</view>                
+            </view>
+            <view class="tab-content">
+                <view hidden="{{selectIndex!=0}}" class="item">
+                  <import src="../wxParse/wxParse.wxml"/>
+                  <!-- //这里data中article为bindName -->
+                  <template is="wxParse" data="{{wxParseData:article.nodes}}"/>
+                </view>
+                <view hidden="{{selectIndex!=1}}" class="item">
+                    <block wx:for="{{goodsArr.attrs}}">
+                      <view class="row">
+                          <view class="col">{{item.attr_name}}</view>
+                          <view class="col">{{item.attr_value}}}</view>
+                      </view>
+                    </block>
+                </view>                
+            </view>
+        </view>
+    <view class="cuxiao"> 
+      <text>促销</text>
+      <text>满300减30</text>
+    </view>
+    <view class="footer">
+        <view class="nose">
+            <view @tap="sister">
+                <text class="iconfont icon-kefu"></text>
+                <text>联系小姐姐</text>
+            </view>
+            <view @tap="tiaoCar">
+                <text class="iconfont icon-gouwuche"></text>
+                <text>多啦A梦宝盒</text>
+            </view>
+        </view>
+        <view class="se">
+            <view @tap="jiaCar">加入宝盒</view>
+            <view>立即购买</view>
+        </view>
+    </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import api from '../../src/api/api.js'
+var WxParse = require('../wxParse/wxParse.js');
+export default class Example extends wepy.page {
+  config = {
+    navigationBarTitleText: '商品详情'
+  }
+
+  data = {
+    goodsArr: '',
+    indicatorDots: true,
+    autoplay: true,
+    interval: 5000,
+    duration: 1000,
+    circular: true,
+    isshou: 0,
+    goodsPicture: [],
+    selectIndex: 0,
+    goods_id:''
+  }
+
+  components = {}
+
+  methods = {
+    shoucang() {
+      this.isshou = this.isshou == 0 ? 1 : 0
+    },
+    tiaoCar() {
+      // wx.showToast({
+      //   title: '请先登录再进行操作哟',
+      //   icon: 'loading',
+      //   duration: 3000
+      // })
+      // setTimeout(function() {
+      //   wx.navigateTo({
+      //     url: '/pages/login'
+      //   })
+      // }, 3000)
+      wx.switchTab({
+        url: './shoppingCar'
+      });
+    },
+    jiaCar(){
+      // 加入购物车
+      var cartData = undefined
+      wx.getStorage({
+        key: 'cart',
+        success: res => {
+          console.log(res)
+          cartData = res.data
+          // 判断id是否存在
+          if(cartData[this.goods_id]){
+            cartData[this.goods_id] += 1
+          }else{
+            cartData[this.goods_id] = 1
+          }
+          wx.setStorage({
+            key: 'cart',
+            data: cartData
+          });
+
+
+        },
+        fail:res => {
+          console.log(res)
+          cartData = {}
+          cartData[this.goods_id] = 1
+          wx.setStorage({
+            key: 'cart',
+            data: cartData
+          });
+        }
+      });
+      wx.showToast({
+        title: '添加中，很快哟',
+        icon: 'none',
+        duration: 500,
+        mask: false,
+      });
+
+
+
+
+
+    },
+    sister() {
+      wx.showToast({
+        title: '小姐姐吃饭中，正在飞速赶来',
+        icon: 'none',
+        duration: 1500,
+        mask: false
+      })
+    },
+    previewImage() {
+      wx.previewImage({
+        urls: this.goodsPicture
+      })
+    },
+    selectItem(index) {
+      console.log(index)
+      this.selectIndex = index
+    }
+  }
+
+  events = {}
+
+  watch = {}
+
+  getgoodsInfo(id) {
+    api.getGoods({
+      data: {
+        goods_id: id
+      },
+      success: resp => {
+        console.log(resp.data)
+        this.goodsArr = resp.data.message
+        this.$apply()
+        this.goodsArr.pics.forEach(element => {
+          this.goodsPicture.push(element.pics_big)
+        })
+        /**
+        * WxParse.wxParse(bindName , type, data, target,imagePadding)
+        * 1.bindName绑定的数据名(必填)
+        * 2.type可以为html或者md(必填)
+        * 3.data为传入的具体数据(必填)
+        * 4.target为Page对象,一般为this(必填)
+        * 5.imagePadding为当图片自适应是左右的单一padding(默认为0,可选)
+        */
+        var that = this;
+        WxParse.wxParse('article', 'html', this.goodsArr.goods_introduce, that);
+      }
+    })
+  }
+
+  computed = {}
+
+  onLoad(options) {
+    this.goods_id = options.goods_id
+    this.getgoodsInfo(options.goods_id)
+  }
+
+  onShow() {}
+}
+</script>
+
+<style lang='less'>
+@import "../wxParse/wxParse.wxss";
+.tab-box {
+  background-color: #f4f4f4;
+  .tab-bar {
+    display: flex;
+    margin-bottom: 30rpx;
+    height: 100rpx;
+    background-color: #fff;
+    .item {
+      flex: 1;
+      line-height: 100rpx;
+      font-size: 30rpx;
+      text-align: center;
+      &.active {
+        color: #eb4450;
+        position: relative;
+        &::after {
+          content: '';
+          display: block;
+          width: 100%;
+          height: 12rpx;
+          background-color: #eb4450;
+          position: absolute;
+          left: 0;
+          bottom: 0;
+        }
+      }
+    }
+  }
+  .tab-content {
+    background-color: #fff;
+  }
+  .wxParse-img{
+    width: 100%;  
+    display:block;
+  }
+  .row{
+    width: 100%;
+    display:flex;
+    height: 100rpx;
+    line-height: 100rpx;
+    border: 1px solid #000;
+    .col{
+      text-align:center;
+      flex:1;
+      }
+    .col:not(:first-child){     
+      border-left: 1rpx solid #000;
+    
+    }
+  }
+  .row:not(:first-child){
+    margin-top:-1rpx;
+  }
+}
+page {
+  width: 100%;
+  background-color: #eee;
+}
+.top {
+  height: 1020rpx;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  .luobo {
+    flex: 1;
+    width: 100%;
+    .activity {
+      width: 100%;
+      height: 100%;
+    }
+    image {
+      width: 100%;
+      height: 100%;
+    }
+  }
+  .content {
+    height: 300rpx;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    padding-left: 17rpx;
+    box-sizing: border-box;
+    .price {
+      color: #eb4450;
+      font-size: 40rpx;
+    }
+    & > view {
+      display: flex;
+      height: 85rpx;
+      .title {
+        width: 608rpx;
+        font-size: 34rpx;
+        box-sizing: border-box;
+        border-right: 1rpx solid #eee;
+        white-space: normal;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+      view {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        font-size: 24rpx;
+        color: #999;
+        align-items: center;
+        &.shou {
+          color: indianred;
+        }
+      }
+    }
+    .kuaidi {
+      font-size: 30rpx;
+      color: #aeadae;
+    }
+  }
+}
+.cuxiao {
+  margin-top: 20rpx;
+  margin-bottom:98rpx;
+  background-color: #fff;
+  height: 68rpx;
+  line-height: 68rpx;
+  box-sizing: border-box;
+  padding-left: 18rpx;
+  font-size: 32rpx;
+  > text:nth-child(1) {
+    margin-right: 45rpx;
+  }
+  > text:nth-child(2) {
+    color: #eb4450;
+  }
+}
+.footer {
+  background-color: #fff;
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 98rpx;
+  .nose {
+    width: 326rpx;
+    display: flex;
+    align-items: center;
+    view {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      align-items: center;
+      font-size: 22rpx;
+      flex: 1;
+    }
+  }
+  .se {
+    display: flex;
+    flex: 1;
+    view {
+      flex: 1;
+      text-align: center;
+      line-height: 98rpx;
+      font-size: 32rpx;
+      &:first-child {
+        background-color: #f4b73f;
+      }
+      &:last-child {
+        background-color: #eb4450;
+      }
+    }
+  }
+}
+</style>

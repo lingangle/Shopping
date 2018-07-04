@@ -1,0 +1,59 @@
+ <template>
+        <!-- 顶部区域 -->
+        <view class="tab-bar">
+        <block wx:for="{{tabList}}" wx:key="">
+            <view @tap="selectItem({{index}})" class="item {{selectIndex==index?'active':''}}">{{item}}</view>
+        </block>
+        </view>
+</template>
+<script>
+    import wepy from 'wepy'
+    export default class Example extends wepy.component {
+        props = {       
+            // 动态传值 类型可以是很多 但是需要自己设置
+            tabList: {
+            type: Array,
+            default: []
+            },
+            // 双向传值
+            selectIndex: {
+            type: Number,
+            default: 0,
+            // 双向 这里必须制定 true
+            twoWay: true
+            }
+        }
+        methods = {
+            selectItem(index) {
+            console.log(index)
+            this.selectIndex = index
+            }
+        }
+}
+</script>
+<style lang='less'>
+    .tab-bar {
+        height: 100rpx;
+        background-color: white;
+        display: flex;
+        .item {
+            flex: 1; 
+            text-align: center;
+            line-height: 100rpx;
+            font-size: 32rpx;
+            &.active {
+                color: #eb4450;
+                position: relative;
+                &::after {
+                    content: '';
+                    position: absolute;
+                    width: 100%;
+                    height: 12rpx;
+                    background-color: #eb4450;
+                    bottom: 0;
+                    left: 0;
+                }
+            }
+        }
+    }
+</style>

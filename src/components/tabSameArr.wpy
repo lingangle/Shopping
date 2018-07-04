@@ -1,0 +1,50 @@
+<!-- 这个是针对上面导航栏只是对数据进行排序或者只是抽取其中的部分数据 -->
+<template>
+    <view class="options">
+        <block wx:for="{{tabArr}}">
+            <view class="option">{{item}}</view>
+        </block>
+    </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  export default class Example extends wepy.page {
+    config = {
+      navigationBarTitleText: "",
+    };
+
+    data = {};
+
+    components = {};
+
+    methods = {};
+
+    events = {};
+
+    watch = {};
+
+    computed = {};
+
+    onLoad() { };
+
+    onShow() { };
+  }
+</script>
+
+<style lang='less'>
+ .options{
+    display: flex;
+    align-items: center;
+    height: 100rpx;
+    .option{
+      flex:1;
+      font-size:28rpx;
+      text-align: center;
+      &.active{
+        color:#eb4450;
+      }
+    }
+  }
+
+</style>

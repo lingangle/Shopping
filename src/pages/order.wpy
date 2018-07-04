@@ -1,0 +1,281 @@
+<!--  -->
+<template>
+  <view class="tab-box">
+        <!-- 顶部区域 -->
+        <tabBar :tabList.sync="tabList"  :selectIndex="selectIndex"></tabBar>        
+        <view class="tab-content">
+            <block wx:for="{{orderArr}}">              
+                <view class="singleall">
+                  <block wx:for="{{item.goods}}" wx:for-item="itemName">
+                    <view class="single">
+                        <image src="{{itemName.goods_small_logo}}"></image>
+                        <view>
+                            <view class="title">{{itemName.goods_name}}</view>
+                            <view class="price">￥<text>{{itemName.goods_price}}</text>.00<text class="fr">x{{itemName.goods_number}}</text></view>
+                        </view>
+                    </view>
+                  </block>
+                    <view class="tworow">
+                      共{{item.total_count}}件商品 总计：¥{{item.total_price}}(含运费0.00))
+                    </view>
+                    <view class="threerow">
+                      <view class="thl">订单号：{{item.order_number}}</view>
+                      <view class="zhifu" @tap="money({{item.order_number}})">支付</view>
+                    </view>
+                </view>
+              </block>
+        </view>
+
+  </view>
+  <toast id="toast"></toast>
+</template>
+
+<script>
+import wepy from 'wepy'
+import tabBar from '../components/tabBar'
+import api from '../../src/api/api.js'
+import Toast from 'wepy-com-toast'
+
+export default class Example extends wepy.page {
+  config = {
+    navigationBarTitleText: '订单'
+  }
+
+  data = {
+    shopArr: [],
+    orderArr: [],
+    selectIndex: 0,
+    order_number:'',
+    token:'',
+    tabList:['全部','没付钱','已付钱','没钱付'],
+    selectIndex:3
+  }
+
+  components = {
+      toast: Toast,
+      tabBar:tabBar
+  };
+
+  methods = {
+    selectItem(index) {
+      console.log(index)
+      this.selectIndex = index
+      index = index+1
+      api.getDan({
+        data:{
+         type:index
+        },
+        header:{
+          "Authorization" : this.token
+        },
+        success: resp => {
+          this.orderArr = resp.data.message.orders
+          this.$apply()
+          console.log(resp.data);
+        }
+      })
+
+    },
+    money(order){
+      api.getzhifu({
+        method:'post',
+        data:{
+          order_number:order
+        },
+        header:{
+          "Authorization" : this.token
+        },
+        success: resp => {  
+          console.log("支付点击了-----")        
+          console.log(resp);
+        }
+      })
+       let promise = this.$invoke('toast', 'show', {
+          title: '微信支付',
+          img: '../image/pay.jpg',
+      });
+
+      promise.then((d) => {
+          console.log('toast done');
+      });
+    }
+  }
+
+  events = {}
+
+
+
+  queryOrder(){
+    api.querryOrder({
+      method:'post',
+      data:{
+        order_number:this.order_number
+      },
+      header:{
+        "Authorization" : this.token
+      },
+      success: resp => {
+        console.log(resp.data);
+      }
+    })
+  }
+
+
+
+  watch = {}
+
+  computed = {}
+
+  onLoad() {   
+
+    this.token = wx.getStorageSync('token');
+    this.order_number = wx.getStorageSync('ordernumber');
+    this.queryOrder()
+
+    api.getDan({
+        data:{
+         type:1
+        },
+        header:{
+          "Authorization" : this.token
+        },
+        success: resp => {
+          console.log(resp.data.message);
+          this.orderArr = resp.data.message.orders
+
+          this.$apply()
+        }
+    })
+
+  }
+
+  onShow() {}
+}
+</script>
+
+
+
+
+ 
+
+
+<style lang='less'>
+page{
+  background-color: #eee;
+}
+.tab-box {
+  background-color: #f4f4f4;
+  .tab-bar {
+    display: flex;
+    margin-bottom: 30rpx;
+    height: 100rpx;
+    background-color: #fff;
+    .item {
+      flex: 1;
+      line-height: 100rpx;
+      font-size: 30rpx;
+      text-align: center;
+      &.active {
+        color: #eb4450;
+        position: relative;
+        &::after {
+          content: '';
+          display: block;
+          width: 100%;
+          height: 12rpx;
+          background-color: #eb4450;
+          position: absolute;
+          left: 0;
+          bottom: 0;
+        }
+      }
+    }
+  }
+  .tab-content {
+      background-color: #eee;
+      .singleall{
+        padding-left: 20rpx;
+        box-sizing: border-box;
+        // height: 440rpx;
+        height:auto;
+        background-color: #fff;
+        margin-bottom:30rpx;
+      }
+      .single { 
+        height: 260rpx;
+        border-bottom: 1rpx solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 29rpx 0 30rpx;
+        box-sizing: border-box;
+        image {
+          width: 200rpx;
+          height: 200rpx;
+          margin-right: 26rpx;
+        }
+        & > view {
+          flex: 1;
+          height: 200rpx;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          .title {
+            font-size: 30rpx;
+            white-space: normal;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+          }
+          .price {
+            font-size: 22rpx;
+            color: #eb4450;
+            text {
+              font-size: 34rpx;
+            }
+            .fr{
+              float:right;
+              color:#333;
+            }
+          }
+        }
+      }
+      .tworow{
+        height: 88rpx;
+        text-align: right;
+        box-sizing: border-box;
+        padding-right:30rpx;
+        font-size:26rpx;
+        line-height: 88rpx;
+        border-bottom: 1px solid #eee;
+        color:#ccc;
+      }
+      .threerow{
+        height: 87rpx;
+        width:715rpx;
+        margin:0 auto;
+        line-height: 87rpx;
+        font-size:26rpx;
+        color:#ccc;
+        .thl{
+          float:left;
+        }
+        .zhifu{          
+          width:158rpx;
+          height:58rpx;
+          box-sizing:border-box;
+          border:1rpx solid #ccc;
+          color:#eb4450;
+          float:right;
+          text-align:center;
+          line-height:58rpx;
+          margin-top:15rpx;
+        }
+      }
+
+    }
+ 
+}
+</style>

@@ -1,0 +1,45 @@
+<!--  -->
+<template>
+   <view class="tab-box">
+        <!-- 顶部区域 -->
+        <tabBar :tabList.sync="tabList" :selectIndex="selectIndex"></tabBar>
+        <view class="tab-content">
+            <view hidden="{{selectIndex!=0}}" class="item">1</view>
+            <view hidden="{{selectIndex!=1}}" class="item">2</view>
+            <view hidden="{{selectIndex!=2}}" class="item">3</view>
+            <view hidden="{{selectIndex!=3}}" class="item">4</view>
+        </view>
+    </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import tabBar from '../components/tabBar'
+  export default class Example extends wepy.page {
+    config = {
+      navigationBarTitleText: "测试",
+    };
+
+    data={
+        tabList:['全部','没付钱','已付钱','没钱付'],
+        selectIndex:3
+    }
+
+    components = { tabBar: tabBar };
+
+    methods = {};
+
+    events = {};
+
+    watch = {};
+
+    computed = {};
+
+    onLoad() { };
+
+    onShow() { };
+  }
+</script>
+
+<style lang='less'>
+</style>

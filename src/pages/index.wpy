@@ -1,0 +1,252 @@
+<style lang="less">
+.luobo {
+  width: 100%;
+  box-sizing: border-box;
+  height: 340rpx;
+  .activity {
+    width: 750rpx;
+    height: 340rpx;
+
+    image {
+      width: 750rpx;
+      height: 340rpx;
+      margin: 0 auto;
+      border-radius: 10rpx;
+    }
+  }
+}
+.fenlei {
+  height: 181rpx;
+  box-sizing: border-box;
+  padding: 24rpx 0 29rpx;
+  background-color: #fff;
+  display: flex;
+  .item {
+    flex: 1;
+    .dan {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      image {
+        width: 128rpx;
+        height: 128rpx;
+      }
+    }
+  }
+}
+.loucen {
+  .flexC {
+    height: 500rpx;
+    box-sizing: border-box;
+    margin-bottom: 20rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: column;
+    .titleImg {
+      height: 90rpx;
+      width: 100%;
+      image {
+        // width: 100%;
+        height: 100%;
+      }
+    }
+    .item {
+      box-sizing: border-box;
+      padding: 0 6rpx 0 16rpx;
+      height: 390rpx;
+      .single {
+        width: 232rpx;
+        float: left;
+        height: 188rpx;
+        margin-right: 10rpx;
+        margin-bottom: 10rpx;
+        image {
+          width: 100%;
+          height: 100%;
+        }
+      }
+      .a {
+        height: 390rpx;
+      }
+    }
+  }
+}
+.dibu {
+  height: 231rpx;
+  width: 100%;
+  background-color: #f4f4f4;
+  > view:first-child {
+    text-align: center;
+    font-size: 24rpx;
+    margin-top: 20rpx;
+  }
+  .backTop {
+    position: fixed;
+    bottom: 0;
+    right: 20rpx;
+    width: 90rpx;
+    background-color: #fff;
+    border-radius: 50%;
+    height: 90rpx;
+    font-size: 24rpx;
+    padding: 16rpx 0 25rpx;
+    box-sizing: border-box;
+    text {
+      display: block;
+      text-align: center;
+    }
+  }
+}
+</style>
+<template>
+  <searchbar></searchbar>
+
+  <view class="luobo">
+    <swiper class="activity"  indicator-dots="{{indicatorDots}}"
+              autoplay="{{autoplay}}" interval="{{interval}}" duration="{{duration}}" circular="{{circular}}">
+      <block wx:for="{{bannerImgArr}}">
+        <swiper-item>
+          <navigator url="{{item.navigator_url}}" open-type="navigate" hover-class="none">
+            <image src="{{item.image_src}}"  class="slide-image" />
+          </navigator>
+        </swiper-item>
+      </block>
+    </swiper> 
+  </view> 
+
+  <view class="fenlei">
+    <block wx:for="{{fenleiArr}}">
+        <view class="item" @tap="tiao({{item.navigator_url}})">
+          <view class="dan"  open-type="navigate" hover-class="none">
+            <image src="{{item.image_src}}"></image>
+          </view>
+        </view>
+    </block>
+  </view>
+
+  <view class="loucen">  
+    <block wx:for="{{loucenArr}}">     
+      <view class="flexC">
+
+        <view class="titleImg">
+             <image src="{{item.floor_title.image_src}}"></image> 
+        </view>
+
+        <view class="item">
+           <block wx:for="{{item.product_list}}" wx:for-index="idx" >
+              <navigator class="single {{idx == 0 ? 'a' :''}}" url="{{item.navigator_url}}" open-type="navigate" hover-class="none">
+                 <image src="{{item.image_src}}" lazy-load="true"></image>
+              </navigator>               
+           </block> 
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view class="dibu">
+    <view><text class="iconfont icon-xiao"></text>我是有底线的</view>
+    <view class="backTop"  @tap="hui" hidden="{{ishidden}}">
+      <text class="iconfont icon-jiantoushang "></text>
+      <text>顶部</text>
+    </view>
+  </view>
+
+</template>
+
+<script>
+import wepy from 'wepy'
+import api from '../../src/api/api.js'
+import searchbar from '../components/searchbar'
+
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: '嗨购'
+  }
+  //声明页面中将要使用到的组件
+  components = {
+    searchbar: searchbar
+  }
+
+  data = {
+    bannerImgArr: '',
+    indicatorDots: true,
+    autoplay: true,
+    interval: 5000,
+    duration: 1000,
+    circular: true,
+    fenleiArr: '',
+    loucenArr: '',
+    ishidden: true
+  }
+  onLoad() {
+    console.log('onLoad')
+    // 基本地址：this.$parent.globalData.baseURL
+    // console.log(this.$parent.globalData.baseURL)
+    this.getBannerInfo()
+    this.getFenleiInfo()
+    this.getloucenInfo()
+  }
+  getBannerInfo() {
+    api.getBanner({
+      success: resp => {
+        // console.log(resp.data);
+        this.bannerImgArr = resp.data.message
+        this.$apply()
+      }
+    })
+  }
+  getFenleiInfo() {
+    api.getFenlei({
+      success: resp => {
+        // console.log(resp.data);
+        this.fenleiArr = resp.data.message
+        this.$apply()
+      }
+    })
+  }
+  getloucenInfo() {
+    api.getLoucen({
+      success: resp => {
+        // console.log(resp.data);
+        this.loucenArr = resp.data.message
+        this.$apply()
+      }
+    })
+  }
+  methods = {
+    tiao(url){
+      url = url.replace('\/pages','.');
+      if(url=='./category'){
+        wx.switchTab({
+          url: url
+        })
+      }else{       
+        wx.showToast({
+          title: '数据飞走了',
+          icon: 'none',
+          duration: 1500,
+          mask: false,
+        });
+      }
+      
+     
+    },
+    onPageScroll(event) {
+      console.log(event)
+      if (event.scrollTop > 100) {
+        this.ishidden = false
+        console.log(1)
+      } else {
+        this.ishidden = true
+      }
+    },
+    hui: function() {
+      wx.pageScrollTo({
+        scrollTop: 0,
+        duration: 100
+      })
+    }
+  }
+}
+</script>

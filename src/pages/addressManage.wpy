@@ -1,0 +1,115 @@
+<!--  -->
+<template>
+    <button @tap="addressAdd">增加收获地址</button>
+    <block wx:for="{{addressArr}}">
+    <view class="single">
+        <view class="left"><text>{{username}}</text></view>
+        <view class="right">
+            <view>{{item.address}}</view>
+            <view>{{item.name}}</view>
+        </view>
+    </view>
+    </block>
+    
+</template>
+
+<script>
+import wepy from 'wepy'
+export default class addressManage extends wepy.page {
+  config = {
+    navigationBarTitleText: '我的收货地址'
+  }
+
+  data = {
+    address: {},
+    username: '',
+    addressArr:[]
+  }
+
+  components = {}
+
+  methods = {
+    addressAdd() {
+      wx.chooseLocation({
+        success: res => {
+          console.log(res)
+          this.address = res
+          this.addressArr.push(res)
+          wx.setStorage({
+            key: 'address',
+            data: this.addressArr
+          })
+        }
+      })
+    }
+  }
+
+  events = {}
+
+  watch = {}
+
+  computed = {}
+
+  onLoad() {
+    wx.getUserInfo({
+      withCredentials: 'false',
+      lang: 'zh_CN',
+      success: res => {
+        // console.log(res)
+        this.username = res.userInfo.nickName
+        this.$parent.username = this.username
+        this.$apply()
+      }
+    })
+    wx.getStorage({
+        key: 'address',
+        success: res => {
+            this.addressArr = res.data
+            console.log(res+'hhhh')
+        },
+        fail:res => {
+            this.address ={
+                address:'请选择区域',
+                name:'请选择详细地址'
+            }
+        }
+    });
+  }
+
+  onShow() {}
+}
+</script>
+
+<style lang='less'>
+.single {
+  display: flex;
+  height: 130rpx;
+  font-size: 33rpx;
+  padding: 10rpx;
+  box-sizing: border-box;
+  border-bottom: 1rpx solid #000;
+  .left {
+    width: 20%;
+    padding: 10rpx;
+    box-sizing: border-box;
+    text {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background-color: skyblue;
+      color: #fff;
+      font-size: 26rpx;
+      line-height: 90rpx;
+      text-align: center;
+    }
+  }
+  .right {
+    flex: 1;
+    padding-left: 20rpx;
+    display: flex;
+    font-size:30rpx;
+    flex-direction: column;
+    justify-content: space-around;
+  }
+}
+</style>

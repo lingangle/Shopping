@@ -1,0 +1,63 @@
+<template>
+ <view class="searchBar" @tap="tiaosearch">
+    <icon type="search" size="24"></icon>
+    <input type="text" placeholder="搜索"/>   
+  </view>
+</template>
+
+
+<script>
+import wepy from 'wepy'
+export default class Example extends wepy.component {
+  props = {}
+
+  data = {}
+
+  components = {}
+
+  methods = {
+    tiaosearch() {
+      wx.navigateTo({
+        url: '/pages/search'
+      })
+    }
+  }
+
+  events = {}
+
+  watch = {}
+
+  computed = {}
+
+  onLoad() {}
+
+  onShow() {}
+}
+</script>
+
+<style lang='less'>
+.searchBar {
+  height: 100rpx;
+  background-color: #ff2d4a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx 16rpx;
+  box-sizing: border-box;
+  position: relative;
+  icon {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-150%);
+    z-index: 8;
+  }
+  input {
+    border-radius: 10rpx;
+    font-size: 24rpx;
+    background-color: #fff;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+  }
+}
+</style>

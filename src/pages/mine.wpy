@@ -1,0 +1,280 @@
+<!--  -->
+<template>
+  <view class="top">
+    <view class="timage" @tap="selfInfo">
+      <text class="iconfont icon-shezhi"></text>  
+      <image src="{{userinfo? userinfo.avatarUrl:'../image/angle.png'}}"></image>    
+      <!-- <image src="../image/angle.png"></image>     -->
+      <text class="iconfont icon-xiaoxi"></text>
+    </view>
+    <text>{{userinfo? userinfo.nickName:'小埋登录/注册'}}</text>
+  </view>
+  <view class="infos">
+    <view class="topinfo">
+        <view>
+          <text>0</text>
+          <text>收藏的店铺</text>
+        </view>
+        <view>
+          <text>0</text>
+          <text>收藏的商品</text>
+        </view>
+        <view>
+          <text>0</text>
+          <text>关注的商品</text>
+        </view>
+        <view>
+          <text>0</text>
+          <text>我的足迹</text>
+        </view>
+      </view> 
+    <view class="dingdan">
+      <view class="ddtop">我的订单</view>
+      <view class="ddbot" @tap="toOrder">
+         <view>
+          <text class="iconfont icon-daifukuan"></text>
+          <text>待付款</text>
+        </view>
+        <view>
+          <text class="iconfont icon-daishouhuo"></text>
+          <text>待收货</text>
+        </view>
+        <view>
+          <text class="iconfont icon-tuikuan"></text>
+          <text>退款/退货</text>
+        </view>
+        <view>
+          <text class="iconfont icon-dingdan"></text>
+          <text>全部订单</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="dizhi" @tap="addressInfo">
+      <text>收获地址管理</text>
+      <text class="iconfont icon-jiantouyou"></text>
+    </view>
+    <view class="last">
+      <view>
+        <text>联系客服</text>
+        <text>400-888-8888</text>
+      </view>
+      <view>
+        <text>意见反馈</text>
+        <text class="iconfont icon-jiantouyou"></text>
+      </view>
+      <view>
+        <text>隐私</text>
+        <text class="iconfont icon-jiantouyou"></text>
+      </view>
+      <view>
+        <text>通用</text>
+        <text class="iconfont icon-jiantouyou"></text>
+      </view>
+     
+    </view>
+
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import api from '../../src/api/api.js'
+
+export default class Example extends wepy.page {
+  config = {
+    navigationBarTitleText: '我的'
+  }
+
+  data = {
+    userinfo: ''
+  }
+
+  components = {}
+
+  methods = {   
+    addressInfo() {
+      wx.chooseAddress({
+        success: res => {
+          console.log(res)
+          // 打印地址信息
+          wx.setStorage({
+            key: 'address',
+            data:res
+          });
+        }
+      })
+   
+    },
+    toOrder() {
+      wx.navigateTo({
+        url: './order'
+      })
+    },
+    selfInfo(){
+       // 判断是否登录
+      wx.login({
+        success: loginres => {
+          console.log(loginres.code)
+          wx.getUserInfo({   
+            withCredentials: 'false',
+            lang: 'zh_CN', 
+            success: res => {              
+              console.log(res)
+              this.userinfo = res.userInfo
+              this.$parent.username = this.userinfo.nickName
+              this.$apply()
+              api.getLogin({
+                data: {
+                  code: loginres.code,
+                  encryptedData: res.encryptedData,
+                  signature: res.signature,
+                  iv: res.iv,
+                  rawData: res.rawData
+                },
+                method: 'POST',
+                success: resp => {
+                  // console.log(resp)
+                  wx.setStorage({
+                    key: 'token',
+                    data: resp.data.message.token
+                    // 发起支付操作
+                  });
+                }
+              })
+            }
+          })
+        }
+      })
+    }
+
+
+  }
+
+  events = {}
+
+  watch = {}
+
+  computed = {}
+
+  onLoad() {}
+
+  onShow() {}
+}
+</script>
+
+<style lang='less'>
+page {
+  background-color: #f4f4f4;
+}
+.top {
+  height: 415rpx;
+  padding: 118rpx 0 115rpx 0;
+  background-color: #eb4450;
+  display: flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 32rpx;
+  color: #fff;
+  .timage {
+    width: 335rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 136rpx;
+    > image {
+      width: 135rpx;
+      height: 135rpx;
+      border-radius: 50%;
+      border: 3rpx solid #fff;
+    }
+  }
+}
+.infos {
+  width: 718rpx;
+  margin: -27rpx auto 0;
+  background-color: #eee;
+  .topinfo {
+    margin-bottom: 20rpx;
+    height: 120rpx;
+    background-color: #fff;
+    display: flex;
+    justify-content: space-around;
+    view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-around;
+      text:first-child {
+        font-size: 20rpx;
+        color: #d5d5d5;
+      }
+      text:last-child {
+        font-size: 26rpx;
+        color: #666;
+      }
+    }
+  }
+  .dingdan {
+    box-sizing: border-box;
+    background-color: #fff;
+    margin-bottom: 20rpx;
+    .ddtop {
+      height: 89rpx;
+      border: 1rpx solid #eee;
+      line-height: 89rpx;
+      box-sizing: border-box;
+      padding-left: 30rpx;
+      font-size: 32rpx;
+    }
+    .ddbot {
+      height: 166rpx;
+      padding: 30rpx 0;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: space-between;
+      view {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-around;
+        text:last-child {
+          font-size: 28rpx;
+          color: #000;
+        }
+      }
+    }
+  }
+  .dizhi {
+    height: 87rpx;
+    background-color: #fff;
+    margin-bottom: 20rpx;
+    box-sizing: border-box;
+    padding: 0 32rpx;
+    line-height: 87rpx;
+    font-size: 32rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .last {
+    background-color: #fff;
+    box-sizing: border-box;
+    padding-left: 30rpx;
+    view {
+      height: 86rpx;
+      border-bottom: 1rpx solid #ccc;
+      box-sizing: border-box;
+      padding-right: 32rpx;
+      line-height: 86rpx;
+      font-size: 32rpx;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+}
+</style>

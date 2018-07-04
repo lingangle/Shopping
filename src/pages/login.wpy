@@ -1,0 +1,173 @@
+<!-- 登录 -->
+<template>
+    <view class="login_container">
+        <view class="login_view">
+            <text class="login_lable">账号：</text>
+            <input class="login_text" placeholder="请输入登录账号" bindinput="listenerUsernameInput"/>
+        </view>
+        <view class="login_view">
+            <text class="login_lable">密码：</text>
+            <input class="login_text" placeholder="请输入密码" password="true" bindinput="listenerPasswordInput"/>
+        </view>
+        <view>
+            <button class="login_button" bindtap="loginAction">登录</button>
+        </view>
+    </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import api from '../../src/api/api.js'
+export default class Example extends wepy.page {
+  config = {
+    navigationBarTitleText: '登录'
+  }
+  data = {
+    userName: '',
+    passwords: '',
+    code: '',
+    encryptedData: '',
+    signature: '',
+    iv: '',
+    rawData: ''
+  }
+
+  components = {}
+
+  methods = {
+    loginAction() {
+      // 非空
+      if (this.userName === '') {
+        wx.showToast({
+          title: '用户名不能为空！',
+          icon: 'error',
+          duration: 1000
+        })
+        return
+      } else if (this.passwords === '') {
+        wx.showToast({
+          title: '密码不能为空！',
+          icon: 'error',
+          duration: 1000
+        })
+        return
+      } else {
+        wx.login({
+          success: res => {
+            console.log(res.code)
+            if (res.code) {
+              console.log(567)
+              this.code = res.code
+            }
+
+            wx.getUserInfo({
+              success: res => {
+                this.encryptedData = res.encryptedData
+                this.iv = res.iv
+                this.rawData = JSON.stringify(res.rawData)
+                this.signature = res.signature
+
+                api.getLogin({
+                  data: {
+                    code: this.code,
+                    encryptedData: this.encryptedData,
+                    signature: this.signature,
+                    iv: this.iv,
+                    rawData: this.rawData
+                  },
+                  method: 'POST',
+                  success: resp => {
+                    console.log(resp)
+                  }
+                })
+              }
+            })
+          }
+        })
+
+        // 登陆中弹出框
+        wx.showToast({
+          title: '正在登录',
+          icon: 'success',
+          duration: 2000
+        })
+      }
+    },
+    /** 监听用户姓名输入 */
+    listenerUsernameInput: function(e) {
+      this.userName = e.detail.value
+      //   console.log(1)
+    },
+    /** 监听密码输入 */
+    listenerPasswordInput: function(e) {
+      this.passwords = e.detail.value
+      //   console.log(2)
+    }
+  }
+
+  events = {}
+
+  watch = {}
+
+  computed = {}
+
+  onLoad() {}
+
+  onShow() {}
+
+  onLaunch() {
+    wx.login({
+      success: res => {
+        if (res.code) {
+          //发起网络请求
+          wx.request({
+            url: 'https://test.com/onLogin',
+            data: {
+              code: res.code
+            }
+          })
+        } else {
+          console.log('获取用户登录态失败！' + res.errMsg)
+        }
+      }
+    })
+  }
+}
+</script>
+
+<style lang='less'>
+.login_container {
+  margin-top: 30px;
+  .login_view {
+    width: 80%;
+    padding: 0 20px;
+    line-height: 45px;
+    height: 45px;
+    display: flex;
+    margin: 0 auto;
+    margin-bottom: 20px;
+  }
+  .login_text {
+    float: left;
+    height: 45px;
+    line-height: 45px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    padding: 0 12px;
+    border-radius: 4px;
+    flex: 1;
+  }
+
+  .login_lable {
+    float: left;
+    font-size: 12px;
+    width: 40px;
+  }
+  .login_button {
+    margin: 100rpx auto;
+    width: 150px;
+    background: green;
+    color: #fff;
+  }
+}
+</style>

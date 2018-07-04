@@ -1,0 +1,374 @@
+<!-- 搜索 -->
+<template>
+  <view class="searchBar">
+        <view class="lSearch">
+            <icon type="search" size="16" ></icon>
+            <input type="text" @confirm="wancheng" @input="jujiao" placeholder="请输入你想要的商品" value="{{inputInfo?inputInfo:''}}"/>
+        </view>
+        <button @tap="butSearch" class="{{isSearch ?'xs':'yc'}}" >搜索</button>
+  </view>
+  <view class="all {{ishidden ? 'yc' :''}}">
+      <view class="top">
+          <text>历史搜索</text>
+          <text @tap="clearSearch">X</text>
+      </view>
+      <view class="content ">         
+          <block wx:for="{{lishu}}"  wx:for-index="idx"  >
+              <view class="box" @tap="tiao({{item}})"  data-idx="{{idx}}">{{item}}</view>
+          </block>
+      </view>
+  </view>
+
+  <view class="searchInfo {{ishidden ? 'xs':'yc'}}">
+     
+    <view class="tab-box">
+        <!-- 顶部区域 -->
+        <view class="tab-bar">
+            <view @tap="selectItem(0)" class="item {{selectIndex==0?'active':''}}">综合</view>
+            <view @tap="selectItem(1)" class="item {{selectIndex==1?'active':''}}">销量</view>
+            <view @tap="selectItem(2)" class="item iconfont {{selectIndex==2?'active':''}} {{icon ? 'icon-jiantoushang' : 'icon-jiantouxia'}}">价格</view>
+        </view>
+        <view class="tab-content">
+            <view class="item">
+                 <block wx:for="{{searchArr}}">
+                    <view class="single" @tap="detail({{item.goods_id}})">
+                        <image src="{{item.goods_small_logo}}"></image>
+                        <view>
+                            <view class="title">{{item.goods_name}}</view>
+                            <view class="price">￥<text>{{item.goods_price}}</text>.00</view>
+                        </view>
+                    </view>
+                </block>
+            </view>           
+        </view>
+    </view>
+    
+
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import api from '../api/api.js'
+export default class Example extends wepy.page {
+  config = {
+    navigationBarTitleText: '搜索'
+  }
+
+  data = {
+    lishu: [],
+    ishidden: false,
+    goodListDefault:[],
+    inputInfo: '',
+    searchArr: [],
+    selectIndex: 0,
+    isSearch: false,
+    searchContent: '',
+    icon: true
+  }
+
+  components = {}
+
+  methods = {
+    butSearch() {
+      console.log(this.searchContent)
+      this.getSearchInfo(this.searchContent)
+      this.ishidden = true
+      var result = this.lishu.indexOf(this.searchContent)
+      if (result != -1) {
+        this.lishu.splice(result, 1)
+      }
+      if (this.lishu.length > 8) {
+        this.lishu.splice(0, 1)
+      }
+      this.lishu.push(this.searchContent)
+      wx.setStorage({
+        key: 'search',
+        data: this.lishu
+      })
+    },
+    tiao(content) {
+      this.ishidden = true
+      this.inputInfo = content
+      this.getSearchInfo(content)
+      this.isSearch = true
+    },
+    selectItem(index) {
+      console.log(index+"hello")
+      this.selectIndex = index
+      console.log(index == 0)
+
+      switch (index) {
+        case '0':
+          console.log('默认值')
+          this.searchArr = this.goodListDefault.slice(0);
+          break
+        case '1':
+          console.log('按销量排序')
+          this.searchArr.sort((a,b)=>{           
+            return a.goods_id - b.goods_id;
+          })   
+          break
+        case '2':
+          console.log('按价格排序')
+          this.icon = !this.icon
+          console.log(this.icon)
+          this.searchArr.sort((a, b) => {
+            if (this.icon) {
+              return a.goods_price - b.goods_price
+            } else {
+              return b.goods_price - a.goods_price
+            }
+          })
+          console.log(this.searchArr) 
+          break
+        default:
+          console.log('我进switch了')
+          break
+      }
+
+     
+    },
+    jujiao(e) {
+      if (e.detail.value.trim() == '') {
+        this.isSearch = false
+      } else {
+        this.isSearch = true
+        this.searchContent = e.detail.value
+      }
+    },
+    clearSearch() {
+      // 清除历史内容
+      this.lishu = []
+      wx.removeStorage({
+        key: 'search'
+      })
+    },
+    wancheng(e) {
+      console.log('输入内容已完成' + e.detail.value)
+      this.getSearchInfo(e.detail.value)
+      this.ishidden = true
+      var result = this.lishu.indexOf(this.searchContent)
+      if (result != -1) {
+        this.lishu.splice(result, 1)
+      }
+      if (this.lishu.length > 8) {
+        this.lishu.splice(0, 1)
+      }
+      this.lishu.push(e.detail.value)
+      wx.setStorage({
+        key: 'search',
+        data: this.lishu
+      })
+    },
+    detail(id){
+      console.log(id)
+      id = +id;
+      wx.navigateTo({
+        url: `./goods_detail?goods_id=${id}`
+      });
+    }
+  }
+
+  getSearchInfo(content) {
+    api.getSearch({
+      data: {
+        query: content
+      },
+      success: resp => {
+        console.log(resp.data.message.goods)
+        this.searchArr = resp.data.message.goods
+        this.goodListDefault = resp.data.message.goods.slice(0)
+        this.$apply()
+      }
+    })
+  }
+  events = {}
+
+  watch = {}
+
+  computed = {}
+
+  onLoad() {
+    wx.getStorage({
+      key: 'search',
+      success: res => {
+        this.lishu = res.data
+        this.$apply()
+      },
+      fail: res => {
+        this.lishu = ['小米', '小米智能电视']
+        this.$apply()
+      }
+    })
+  }
+
+  onShow() {}
+}
+</script>
+
+<style lang='less'>
+page {
+  background-color: #fff;
+  width: 100%;
+}
+.searchBar {
+  height: 120rpx;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 30rpx 16rpx;
+  display: flex;
+  background-color: #eee;
+  .lSearch {
+    flex: 1;
+    height: 60rpx;
+    border: 0 none;
+    outline: 0 none;
+    background-color: #fff;
+    color: #808080;
+    font-size: 26rpx;
+    position: relative;
+    icon {
+      position: absolute;
+      left: 20rpx;
+      z-index: 8;
+      line-height: 60rpx;
+      top: 10rpx;
+    }
+    input {
+      padding-left: 70rpx;
+      line-height: 60rpx;
+    }
+  }
+  button {
+    width: 160rpx;
+    margin-left: 20rpx;
+    height: 60rpx;
+    box-sizing: border-box;
+    border: 1rpx solid #bfbfbf;
+    text-align: center;
+    line-height: 60rpx;
+    font-size: 32rpx;
+    color: #000;
+    background-color: #eee;
+  }
+}
+.top {
+  height: 88rpx;
+  width: 100%;
+  display: flex;
+  padding: 0 30rpx 0 30rpx;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+  font-size: 29rpx;
+  text:last-child {
+    width: 30rpx;
+    height: 30rpx;
+    border-radius: 50%;
+    background-color: #ccc;
+    color: #fff;
+    font-size: 20rpx;
+    text-align: center;
+  }
+}
+.content {
+  box-sizing: border-box;
+  padding: 0 16rpx;
+  .box {
+    float: left;
+    background-color: #ddd;
+    padding: 21rpx 25rpx;
+    box-sizing: border-box;
+    font-size: 24rpx;
+    color: #000;
+    text-align: center;
+    height: 64rpx;
+    margin-right: 30rpx;
+    margin-bottom: 18rpx;
+  }
+}
+.yc {
+  display: none;
+}
+.xs {
+  display: block;
+}
+.searchInfo {
+  width: 100%;
+  .tab-box {
+    background-color: #f4f4f4;
+    .tab-bar {
+      display: flex;
+      margin-bottom: 30rpx;
+      height: 100rpx;
+      background-color: #fff;
+      .item {
+        flex: 1;
+        line-height: 100rpx;
+        font-size: 30rpx;
+        text-align: center;
+        &.active {
+          color: #eb4450;
+          position: relative;
+          &::after {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 12rpx;
+            background-color: #eb4450;
+            position: absolute;
+            left: 0;
+            bottom: 0;
+          }
+        }
+      }
+    }
+    .tab-content {
+      background-color: #fff;
+      padding-left: 20rpx;
+      box-sizing: border-box;
+      .single {
+        height: 260rpx;
+        border-bottom: 1rpx solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 29rpx 0 30rpx;
+        box-sizing: border-box;
+        image {
+          width: 200rpx;
+          height: 200rpx;
+          margin-right: 26rpx;
+        }
+        & > view {
+          flex: 1;
+          height: 200rpx;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          .title {
+            font-size: 30rpx;
+            white-space: normal;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+          }
+          .price {
+            font-size: 22rpx;
+            color: #eb4450;
+            text {
+              font-size: 34rpx;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+.cancel {
+  visibility: hidden;
+}
+</style>

@@ -1,0 +1,575 @@
+<!--  -->
+<template>
+
+  <view class="empty-cart" hidden="{{isfull}}">
+    <view class="iconfont icon-gouwuche"></view>
+    <view>你的宝盒中空空如也哟</view>
+ </view>
+  <view class="full-cart" hidden="{{!isfull}}">
+
+
+    <view class="info" @tap="chooseAddress">
+      <view class="oneInfo">
+        <view>
+          <text>收货人:</text>
+          <text>{{address.userName}}</text>
+        </view>
+        <view>
+          <text>{{address.telNumber}}</text>
+          <text class="iconfont icon-jiantouyou"></text>
+        </view>
+      </view>
+      <view class="twoInfo" >
+        收货地址：{{address.provinceName}} {{address.cityName}} {{address.countyName}} {{address.detailInfo}}
+      </view>
+    </view>
+    <view class="colorbox"></view>
+    <view class="all">
+      <block wx:for="{{carArr}}" wx:for-index="idx">
+        <view class="single" data-idx="{{idx}}" >
+          <view class="bl">           
+            <checkbox @tap="change({{idx}})" value="" checked="{{!item.ischecked}}"/>
+          </view>
+          <view class="br">
+            <view class="l"> 
+              <image src="{{item.goods_small_logo}}"></image>
+            </view>
+            <view class="r">
+              <text>{{item.goods_name}}</text>            
+              <view class="sr">
+                <view class="price"><text>￥</text> {{item.goods_price}}<text>.00</text></view>
+                <view class="shu">
+                  <text @tap="jian({{item.goods_id}})">-</text>
+                  <text>{{shopArr[item.goods_id]}}</text>
+                  <text @tap="jia({{item.goods_id}})">+</text>
+                </view>              
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <view class="footer">
+      <view class="footerL">
+        <checkbox @tap="isall" value="" checked="{{isAllchecked}}"/>
+        <text>全选</text>
+      </view>
+      <view class="footerR">
+        <view class="footerRL">
+          <view class="footTop"><text class="fone">合计：</text><text class="fs">￥</text>{{totalPrice}}<text class="fs">.00</text></view>
+          <view class="footBot">包含运费</view>
+        </view>
+        <view class="footerRR" @tap="jiesuan">结算({{checkedNum}})</view>
+      </view>
+    </view>
+
+
+ </view>
+
+  <toast id="toast"></toast>
+
+</template>
+
+<script>
+import wepy from 'wepy'
+import api from '../../src/api/api.js'
+import Toast from 'wepy-com-toast'
+
+export default class shoppingCar extends wepy.page {
+  config = {
+    navigationBarTitleText: '购物车'
+  }
+
+  data = {
+    carArr: [],
+    isfull: false,
+    shopArr: undefined,
+    isAllchecked: true,
+    totalPrice:0,
+    address:undefined
+  }
+
+  components = {toast: Toast};
+
+  methods = {
+    chooseAddress(){
+
+        wx.chooseAddress({
+        success: res => {
+          console.log(res)
+          this.address = res
+          this.$apply()
+          // 打印地址信息
+          wx.setStorage({
+            key: 'address',
+            data:res
+          });
+
+        }
+      })
+      
+    },
+    jiesuan() {
+      var checkNum = 0
+      this.carArr.forEach(element => {
+        if (!element.ischecked) {
+          checkNum++
+        }
+      })
+      //  判断是否选择商品
+      if (checkNum == 0) {
+        wx.showToast({
+          title: '商品为0',
+          icon: 'none',
+          duration: 1500,
+          mask: false
+        })
+        return 
+      }
+      //  判断是否选择地址
+      if(this.address == undefined){
+        wx.showModal({
+          title: '提示',
+          content: '你还没有选择地址哟',
+          confirmText: '去选择地址',
+          confirmColor: '#3CC51F',
+          success: res => {
+            wx.switchTab({
+              url: './mine'
+            });
+          }
+        });
+        return 
+      }
+
+      let promise = this.$invoke('toast', 'show', {
+          title: '微信支付',
+          img: '../image/pay.jpg',
+      });
+
+      promise.then((d) => {
+          console.log('toast done');
+      });
+      
+      wx.getStorage({
+        key: 'token',
+        success: res => {
+          var token = wx.getStorageSync('token');
+          // 生成一个临时对象
+          var temArr = []
+          for(var i = 0;i<this.carArr.length;i++){
+            if(!this.carArr[i].ischecked){
+              var obj = {}
+              obj.goods_id = this.carArr[i].goods_id
+              obj.goods_price = this.carArr[i].goods_price
+              obj.goods_number = this.shopArr[this.carArr[i].goods_id]
+              temArr.push(obj)
+            }
+
+          }
+          console.log(temArr)
+
+          api.getOrder({
+            method:'POST',
+            data:{
+              order_price:this.totalPrice,
+              consignee_addr:`${this.address.cityName}${this.address.countyName}${this.address.detailInfo}`,
+              goods:temArr
+            },
+            header:{
+              "Authorization" : token 
+            },
+            success: resp => {
+              console.log(resp);
+              wx.setStorage({
+                key: 'ordernumber',
+                data:  resp.data.message.order_number
+              });
+              this.$apply()
+
+              // 去结算页面，已经生成订单号
+
+                api.getzhifu({
+                  method:'post',
+                  data:{
+                    order_number:resp.data.message.order_number
+                  },
+                  header:{
+                    "Authorization" : token
+                  },
+                  success: resp => {  
+                    console.log("支付点击了-----")        
+                    console.log(resp);
+                  }
+                })
+
+
+              wx.showModal({
+                title: '提示',
+                content: '去订单页面',
+                showCancel: true,
+                cancelText: '取消',
+                cancelColor: '#000000',
+                confirmText: '确定',
+                confirmColor: '#3CC51F',
+                success: res => {
+                  if(res.confirm){
+                    wx.navigateTo({
+                      url: './order'
+                    });
+                  }
+                }
+              });
+            }
+          })
+          
+
+        },
+        fail:res => {
+          wx.showModal({
+            title: '提示',
+            content: '要登录哟',
+            showCancel: true,
+            cancelText: '残忍拒绝',
+            cancelColor: '#000000',
+            confirmText: '去登陆',
+            confirmColor: '#3CC51F',
+            success: res => {
+              if(res.confirm){
+                wx.switchTab({
+                  url: './mine'
+                });
+              }
+            }
+          });
+        }
+      });
+     
+
+
+
+    },
+    jian(id) {
+      // console.log(id)
+      // console.log(this.shopArr[id])
+      if (this.shopArr[id] == 1) {
+        wx.showModal({
+          title: '提示',
+          content: '真的要删除吗？',
+          showCancel: true,
+          cancelText: '取消',
+          cancelColor: '#000000',
+          confirmText: '确定',
+          confirmColor: '#3CC51F',
+          success: res => {
+            if (res.confirm) {
+              this.shopArr[id]--             
+                // 商品数量如果为0时，就应该删除这个商品
+                // 删除对象中的属性
+              delete this.shopArr[id]
+              // 同步修改缓存中的值
+              wx.setStorage({
+                key: 'cart',
+                data: this.shopArr
+              })
+              for (var i = 0; i < this.carArr.length; i++) {
+                // console.log(this.carArr[i].goods_id)
+                if (id == this.carArr[i].goods_id) {
+                  console.log(id + '--------找到了')
+                  this.carArr.splice(i, 1)
+                }
+              }
+              if (this.carArr.length == 0) {
+                this.isfull = false
+                wx.removeStorage({
+                  key: 'cart'
+                })
+              }          
+              this.$apply()
+            }
+          }
+        })
+      }else{
+        this.shopArr[id]--
+        wx.setStorage({
+          key: 'cart',
+          data: this.shopArr
+        })
+        this.$apply()
+      }
+    },
+    jia(id) {
+      console.log(id)
+      console.log(this.shopArr[id])
+      this.shopArr[id] = this.shopArr[id] + 1
+      wx.setStorage({
+        key: 'cart',
+        data: this.shopArr
+      })
+    },
+    isall() {
+      this.isAllchecked = !this.isAllchecked
+      this.carArr.forEach(element => {
+        element.ischecked = !this.isAllchecked
+      })
+    },
+    change(index) {
+      console.log(index)
+      this.carArr[index].ischecked = !this.carArr[index].ischecked
+      console.log(this.carArr)
+      var flag = 1;
+      this.carArr.forEach(element => {
+        if (element.ischecked) {
+          flag = 0    
+          return      
+        }
+      })
+      if(flag){
+        this.isAllchecked = true
+      }else{
+        this.isAllchecked = false
+      }
+    }
+  }
+
+  events = {}
+
+  watch = {}
+
+  onLoad() {}
+
+  computed = {
+    totalPrice() {
+      var totalprice = 0
+      for (var i = 0; i < this.carArr.length; i++) {
+        if (!this.carArr[i].ischecked) {
+          var price = this.carArr[i].goods_price
+          var count = this.shopArr[this.carArr[i].goods_id]
+          totalprice += price * count
+        }
+      }
+      this.totalPrice = totalprice;
+      return totalprice
+    },
+    checkedNum() {
+      var num = 0
+      this.carArr.forEach(element => {
+        if (!element.ischecked) {
+          num = num + 1
+        }
+      })
+      return num
+    }
+  }
+
+  onShow() {
+    wx.getStorage({
+      key: 'cart',
+      success: res => {
+        this.isfull = true
+        console.log('购物车中有数据哟')
+        console.log(res)
+        this.shopArr = res.data
+        // 传入的数据格式是id,id,id
+        var goods_ids = ''
+        for (var key in this.shopArr) {
+          goods_ids += key
+          goods_ids += ','
+        }
+        goods_ids = goods_ids.slice(0, -1)
+        console.log(goods_ids)
+        api.getCar({
+          data: {
+            goods_ids: goods_ids
+          },
+          success: resp => {
+            console.log(resp.data.message)
+            this.carArr = resp.data.message
+            this.$apply()
+            console.log(this.carArr)
+          }
+        })
+        this.$apply()
+      },
+      full: res => {
+        this.isfull = false
+        this.$apply()
+        console.log('购物车中空空如也')
+      }
+    })
+
+    wx.getStorage({
+      key: 'address',
+      success: res => {
+        this.address = res.data
+        this.$apply()
+      }
+    });
+  }
+}
+</script>
+
+<style lang='less'>
+page {
+  background-color: #f4f4f4;
+  height: 100%;
+}
+
+.empty-cart {
+  height: 100%;
+  box-sizing: border-box;
+  padding-top: 200rpx;
+  view {
+    text-align: center;
+    font-size: 34rpx;
+    margin-top: 10rpx;
+  }
+  .iconfont {
+    font-size: 200rpx;
+    color: #eb4450;
+  }
+}
+
+.full-cart {
+  .info {
+    box-sizing: border-box;
+    height: 208rpx;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    font-size: 32rpx;
+    padding: 0 34rpx 0 18rpx;
+    .oneInfo {
+      display: flex;
+      justify-content: space-between;
+      view:first-child {
+        width: 195px;
+      }
+    }
+  }
+  .colorbox {
+    height: 30rpx;
+    width: 100%;
+    background-color: lightcoral;
+  }
+
+  .all {
+    .single {
+      height: 205rpx;
+      box-sizing: border-box;
+      width: 100%;
+      background-color: #fff;
+      display: flex;
+      justify-content: space-around;
+      .bl {
+        flex-basis: 86rpx;
+        width: 86rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .br {
+        flex: 1;
+        display: flex;
+        border-top: 1px solid #ddd;
+        border-bottom: 1px solid #ddd;
+        padding-right: 18rpx;
+        box-sizing: border-box;
+        .l {
+          width: 170rpx;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          image {
+            width: 160rpx;
+            height: 160rpx;
+          }
+        }
+        .r {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-around;
+          font-size: 26rpx;
+          .sr {
+            display: flex;
+            justify-content: space-between;
+            font-size: 30rpx;
+            height: 50rpx;
+            .price {
+              color: #eb4450;
+              text {
+                font-size: 20rpx;
+                line-height: 50rpx;
+              }
+            }
+            .shu {
+              display: flex;
+              width: 200rpx;
+              justify-content: space-between;
+              align-items: center;
+              text-align: center;
+              text:nth-child(2n + 1) {
+                border: 2rpx solid #666666;
+                margin-left: -2rpx;
+                width: 50rpx;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    .footerL {
+      width: 150rpx;
+      flex-basis: 150rpx;
+      display: flex;
+      justify-content: space-between;
+    }
+    .footerR {
+      width: 485rpx;
+      display: flex;
+      justify-content: space-between;
+      .footerRL {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        .footTop {
+          color: #eb4450;
+          font-size: 28rpx;
+          .fone {
+            font-size: 32rpx;
+            color: #000;
+          }
+          .fs {
+            font-size: 18rpx;
+          }
+        }
+        .footBot {
+          font-size: 24rpx;
+          color: #999;
+        }
+      }
+      .footerRR {
+        width: 230rpx;
+        height: 97rpx;
+        background-color: #eb4450;
+        color: #fff;
+        font-size: 30rpx;
+        line-height: 97rpx;
+        text-align: center;
+      }
+    }
+  }
+}
+</style>
